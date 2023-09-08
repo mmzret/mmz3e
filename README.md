@@ -1,34 +1,28 @@
-# mmze
+# mmz3e
 
-An Electron application with React and TypeScript
+>**Warning**  
+> This project is still in development, so data can be viewed but not edited yet.
 
-## Recommended IDE Setup
+mmz3e is a tool for editing Megaman Zero 3 (Japan) ROM.
 
-- [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+<img src="./image/level_editor.png"/>
 
-## Project Setup
+<img src="./image/sprite_editor.png"/>
 
-### Install
+## Usage
 
 ```bash
 $ yarn
-```
-
-### Development
-
-```bash
 $ yarn dev
 ```
+
+Click `Load Project` and select `mmzret/rmz3` in your local PC.
 
 ### Build
 
 ```bash
-# For windows
-$ yarn build:win
-
-# For macOS
-$ yarn build:mac
-
-# For Linux
-$ yarn build:linux
+$ yarn build:win # For windows
+$ yarn build:mac # For macOS
+$ yarn build:linux # For Linux
 ```
+
