@@ -3,7 +3,7 @@ import path, { join } from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import icon from '../../resources/icon.png?asset';
 import { PATH, loadProject } from './project';
-import { createScreen, getStageList, loadStage } from './level';
+import { createScreen, getMetatileInfo, getStageList, loadStage } from './level';
 import { loadSprite } from './sprite';
 import { loadJSON } from './helper';
 
@@ -96,8 +96,17 @@ ipcMain.handle('load-sprite', async (_, name: string) => {
   return { ok: true, data: result };
 });
 
-ipcMain.handle('get-sprite-list', async (_, name: string) => {
-  const json = loadJSON(path.join(PATH.project, PATH.sprites, 'sprite.json'));
-  const result = [...json.main, ...json.prop];
+ipcMain.handle('get-sprite-list', async (_, dynamicOrStatic: 'dynamic' | 'static') => {
+  let sprites: any;
+  if (dynamicOrStatic === 'dynamic') {
+    sprites = loadJSON(path.join(PATH.project, PATH.sprites, 'dynamic', 'sprite.json'));
+  } else {
+    sprites = loadJSON(path.join(PATH.project, PATH.sprites, 'static', 'sprite.json'));
+  }
+  const result = [...sprites.data];
   return { ok: true, data: result };
+});
+
+ipcMain.handle('get-metatile-info', (_, metatileID: number) => {
+  return { ok: true, data: getMetatileInfo(metatileID) };
 });

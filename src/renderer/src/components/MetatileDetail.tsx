@@ -1,42 +1,51 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Flex, Text } from '@chakra-ui/react';
 import { useImageURL } from '../hooks/useImageURL';
-import { useRecoilValue } from 'recoil';
-import { metatileAttrAtom, metatileFamily, metatileSheet } from '../state';
 import { Image, Layer, Stage } from 'react-konva';
+import useImage from 'use-image';
+import { toHex } from '@renderer/utils';
 
-export const MetatileDetail: React.FC<{ metatileID: number }> = ({ metatileID }) => {
-  const canvas = document.createElement('canvas');
-  [canvas.width, canvas.height] = [16, 16];
-  const sheet = useImageURL(useRecoilValue(metatileSheet));
-  const metatile = useRecoilValue(metatileFamily(metatileID));
-  const attr = useRecoilValue(metatileAttrAtom)[metatileID] ?? 0;
-
-  const palettes = new Set<number>();
-  palettes.add(metatile.lt >> 12);
-  palettes.add(metatile.rt >> 12);
-  palettes.add(metatile.lb >> 12);
-  palettes.add(metatile.rb >> 12);
+export const MetatileDetail: React.FC<{ sheetURL: string; metatileID: number }> = ({ sheetURL, metatileID }) => {
+  const sheet = useImageURL(sheetURL);
+  const [metatile, setMetatile] = useState<string>('');
+  const [attr, setAttr] = useState<number>(0);
+  const [palettes, setPalettes] = useState<number[]>([0]);
+  const [image] = useImage(metatile);
 
   useEffect(() => {
-    const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+    const getMetatileInfo = async () => {
+      const { ok, data } = await window.electron.ipcRenderer.invoke('get-metatile-info', metatileID);
+      if (!ok) return;
+      console.log(data);
+      setAttr(data.attr);
+      const palettes = new Set<number>(data.tiles.map((t) => t.paletteID));
+      setPalettes(Array.from(palettes));
+    };
+    getMetatileInfo();
+  }, [metatileID]);
+
+  useEffect(() => {
+    const canvas = document.createElement('canvas');
+    [canvas.width, canvas.height] = [16, 16];
+    const ctx = canvas.getContext('2d', { alpha: false });
     if (ctx) {
       const id = metatileID;
       const [x, y] = [id % 16, Math.floor(id / 16)];
       ctx.drawImage(sheet, x * 16, y * 16, 16, 16, 0, 0, canvas.width, canvas.height);
+      setMetatile(canvas.toDataURL());
     }
-  }, [sheet]);
+  }, [sheet, metatileID]);
 
   return (
     <Flex border="1px">
-      <Stage width={canvas.width * 4} height={canvas.height * 4}>
+      <Stage width={16 * 4} height={16 * 4}>
         <Layer>
-          <Image image={canvas} scaleX={4} scaleY={4} />
+          <Image image={image} scaleX={4} scaleY={4} />
         </Layer>
       </Stage>
       <Box pl={2}>
         <Text fontSize="xs">ID: {metatileID}</Text>
-        <Text fontSize="xs">Attr: {attr}</Text>
+        <Text fontSize="xs">Attr: {toHex(attr, 4, '0x')}</Text>
         <Text fontSize="xs">Palette: {Array.from(palettes).join(',')}</Text>
       </Box>
     </Flex>

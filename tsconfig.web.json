@@ -7,7 +7,6 @@
     "src/preload/*.d.ts"
   ],
   "compilerOptions": {
-    "allowImportingTsExtensions": true,
     "composite": true,
     "jsx": "react-jsx",
     "baseUrl": ".",

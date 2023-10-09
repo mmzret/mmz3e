@@ -42,12 +42,13 @@ export const getMetatileSheet = (tilesetPair: number, data: Uint16Array): Canvas
       const metatileID = Math.floor(i / 4);
       const mapData = data[i];
       let tileID = mapData & 0x3ff;
+      const [xflip, yflip] = [mapData & (1 << 10), mapData & (1 << 11)];
       const paletteID = mapData >> 12;
       const x = (metatileID % 16) * 16 + (i % 2) * 8;
       const y = Math.floor(metatileID / 16) * 16 + (i % 4 < 2 ? 0 : 8);
 
       let tileset: Tileset;
-      const cacheID = tileID | (paletteID << 10);
+      const cacheID = tileID | (paletteID << 12) | xflip | yflip;
       if (tileID > 511) {
         tileID -= 512;
         tileset = tileset2;
@@ -59,7 +60,7 @@ export const getMetatileSheet = (tilesetPair: number, data: Uint16Array): Canvas
       if (cache.has(cacheID)) {
         tile = cache.get(cacheID)!;
       } else {
-        tile = createTile(tileset.bpp.slice(tileID * 32, (tileID + 1) * 32), tileset.palettes.slice(paletteID * 16, (paletteID + 1) * 16));
+        tile = createTile(tileset.bpp.slice(tileID * 32, (tileID + 1) * 32), tileset.palettes.slice(paletteID * 16, (paletteID + 1) * 16), !!xflip, !!yflip);
         cache.set(cacheID, tile);
       }
       sheet.putImageData(tile, x, y);

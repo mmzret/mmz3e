@@ -27,12 +27,15 @@ export const SpriteEditor = () => {
   const [sequences, setSequences] = useState<Sequence[]>([]); // [frameIdx, frameIdx, ...
   const [selectedSeuqence, setSelectedSequence] = useState<number>(-1);
   const [list, setList] = useState<SpriteAbout[]>([]);
+  const [isDynamic, setIsDynamic] = useState<boolean>(true);
 
   useEffect(() => {
-    getSpriteList();
-  }, []);
+    getSpriteList(isDynamic);
+  }, [isDynamic]);
 
   const loadSprite = async (name: string) => {
+    const dir = isDynamic ? 'dynamic' : 'static';
+    name = dir + '/' + name;
     const { ok, data } = await (window.electron.ipcRenderer.invoke('load-sprite', name) as Promise<{
       ok: boolean;
       data: {
@@ -51,8 +54,8 @@ export const SpriteEditor = () => {
     setSize(size);
   };
 
-  const getSpriteList = async () => {
-    const { ok, data } = await window.electron.ipcRenderer.invoke('get-sprite-list');
+  const getSpriteList = async (isDynamic: boolean) => {
+    const { ok, data } = await window.electron.ipcRenderer.invoke('get-sprite-list', isDynamic ? 'dynamic' : 'static');
     if (!ok) return;
     setList(data);
   };
@@ -61,9 +64,23 @@ export const SpriteEditor = () => {
     <Box p={4}>
       <Box>
         <Select
+          placeholder="Select Anim type"
+          onChange={(e) => {
+            setIsDynamic(e.target.value === 'dynamic');
+          }}
+        >
+          <option value="dynamic">Dynamic</option>
+          <option value="static">Static</option>
+        </Select>
+      </Box>
+
+      <Spacer h={4} />
+
+      <Box>
+        <Select
           placeholder="Select sprite"
           onChange={(e) => {
-            setSelectedSequence(-1);
+            setSelectedSequence(0);
             loadSprite(e.target.value);
           }}
         >
@@ -84,6 +101,7 @@ export const SpriteEditor = () => {
         <Spacer h={2} />
         <Select
           placeholder="Select Animation"
+          value={selectedSeuqence}
           onChange={(e) => {
             setSelectedSequence(parseInt(e.target.value));
           }}
@@ -129,15 +147,19 @@ export const SpriteEditor = () => {
 const SpriteAnimation: React.FC<{ frames: SpriteFrame[]; seq: Sequence; w: number; h: number }> = (props) => {
   const [frame, setFrame] = useState<number>(0);
   const [url, setUrl] = useState<string>('');
+  const [animationLength, setAnimationLength] = useState<number>(0);
 
-  let animationLength = 0;
-  for (const seq of props.seq) {
-    if (seq.duration !== 254 && seq.duration !== 255) {
-      animationLength += seq.duration;
-    } else {
-      break;
+  useEffect(() => {
+    let animationLength = 0;
+    for (const seq of props.seq) {
+      if (seq.duration !== 254 && seq.duration !== 255) {
+        animationLength += seq.duration;
+      } else {
+        break;
+      }
     }
-  }
+    setAnimationLength(animationLength);
+  }, []);
 
   useAnimationFrame(() => {
     setFrame((frame) => (frame + 1) % animationLength);
@@ -156,9 +178,12 @@ const SpriteAnimation: React.FC<{ frames: SpriteFrame[]; seq: Sequence; w: numbe
       seqIndex++;
     }
 
-    console.log(seqIndex, props.seq, props.frames);
-    const frameIdx = props.seq[seqIndex].frameIdx;
-    setUrl(props.frames[frameIdx].url);
+    // console.log(seqIndex, props.seq, props.frames);
+    if (seqIndex < props.seq.length) {
+      const frameIdx = props.seq[seqIndex].frameIdx;
+      setUrl(props.frames[frameIdx].url);
+    }
   }, [frame]);
+
   return <Image src={url} w={`${props.w}px`} h={`${props.h}px`} />;
 };

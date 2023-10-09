@@ -67,7 +67,7 @@ export const LevelEditor = () => {
         <Divider orientation="vertical" h="auto" />
 
         <Box>
-          <MetatileDetail metatileID={metatileID} />
+          <MetatileDetail sheetURL={sheetURL} metatileID={metatileID} />
           <Spacer h={4} />
           <MetatileSheet sheetURL={sheetURL} />
         </Box>

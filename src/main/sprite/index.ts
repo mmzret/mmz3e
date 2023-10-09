@@ -132,8 +132,8 @@ export const createMetasprite = async (sheet_path: string, m: Metasprite): Promi
             const img = await loadImage(url);
             subsprite.getContext('2d', { alpha: true })?.drawImage(img, xTile * 8, yTile * 8);
           } catch (e) {
-            console.log(url, s);
-            console.log(e);
+            console.error(url, s);
+            console.error(e);
             throw e;
           }
         }

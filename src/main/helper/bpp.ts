@@ -2,17 +2,30 @@ import { createCanvas } from 'canvas';
 
 export type RGB = [number, number, number];
 
-export const createTile = (bpp: Uint8Array, pal: Uint16Array): ImageData => {
+export const createTile = (bpp: Uint8Array, pal: Uint16Array, xflip: boolean, yflip: boolean): ImageData => {
   const canvas = createCanvas(8, 8);
   const tile = canvas.getContext('2d', { alpha: false });
   if (tile) {
     const rgb = convert4BppToRGB(bpp, pal);
     const imageData = tile.createImageData(8, 8);
-    for (let i = 0; i < rgb.length; i++) {
-      imageData.data[i * 4] = rgb[i][0];
-      imageData.data[i * 4 + 1] = rgb[i][1];
-      imageData.data[i * 4 + 2] = rgb[i][2];
-      imageData.data[i * 4 + 3] = 255;
+    for (let y = 0; y < 8; y++) {
+      for (let x = 0; x < 8; x++) {
+        let [col, row] = [x, y];
+        if (xflip) {
+          col = 7 - x;
+        }
+        if (yflip) {
+          row = 7 - y;
+        }
+        const i = row * 8 + col;
+        if (i >= rgb.length) {
+          continue;
+        }
+        imageData.data[(y * 8 + x) * 4] = rgb[i][0];
+        imageData.data[(y * 8 + x) * 4 + 1] = rgb[i][1];
+        imageData.data[(y * 8 + x) * 4 + 2] = rgb[i][2];
+        imageData.data[(y * 8 + x) * 4 + 3] = 255;
+      }
     }
     tile.putImageData(imageData, 0, 0);
   }

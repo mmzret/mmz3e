@@ -133,3 +133,22 @@ export const getStageList = (): string[] => {
   }
   return results;
 };
+
+export const getMetatileInfo = (metatileID: number) => {
+  const tiles: any[] = [];
+  for (let i = 0; i < 4; i++) {
+    const mapData = Stage.metatiles[metatileID * 4 + i];
+    const tileID = mapData & 0x3ff;
+    const paletteID = mapData >> 12;
+    const info = {
+      tileID,
+      paletteID,
+    };
+    tiles.push(info);
+  }
+  const attr = Stage.metatileAttr[metatileID] ?? 0;
+  return {
+    tiles,
+    attr,
+  };
+};
