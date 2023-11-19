@@ -113,3 +113,22 @@ export const loadJSON = (json_path: string) => {
 export const ReadGraphicHeader = (path: string): { data: GraphicHeader[] } => {
   return loadJSON(path) as { data: GraphicHeader[] };
 };
+
+export const getBackdropColor = (png: Uint8Array): [number, number, number] => {
+  let ofs = 8;
+  while (ofs < png.length) {
+    const chunkSize = png[ofs + 3] | (png[ofs + 2] << 8) | (png[ofs + 1] << 16) | (png[ofs] << 24);
+    ofs += 4;
+    const chunkType = String.fromCharCode(png[ofs], png[ofs + 1], png[ofs + 2], png[ofs + 3]);
+    ofs += 4;
+    if (chunkType === 'PLTE') {
+      const r = png[ofs];
+      const g = png[ofs + 1];
+      const b = png[ofs + 2];
+      return [r, g, b];
+    }
+    ofs += chunkSize;
+    ofs += 4; // crc
+  }
+  return [0, 0, 0];
+};

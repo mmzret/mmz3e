@@ -1,7 +1,9 @@
-import { createCanvas, loadImage } from 'canvas';
+import { Canvas, createCanvas, loadImage } from 'canvas';
 import fs from 'fs';
 import path from 'path';
 import { PATH, loadLocalImage } from '../project';
+import { getBackdropColor } from '../helper';
+import { nativeImage } from 'electron';
 
 type Sequence = {
   frameIndex: number;
@@ -77,7 +79,10 @@ export const loadSprite = async (sprite_path: string): Promise<{ frames: SpriteF
 };
 
 export const createMetasprite = async (sheet_path: string, m: Metasprite): Promise<SpriteFrame> => {
-  const sheet = loadLocalImage(sheet_path);
+  const raw = fs.readFileSync(sheet_path);
+  const backdrop = getBackdropColor(raw);
+
+  const sheet = await makeBackdropTransparentForNativeImage(loadLocalImage(sheet_path), backdrop);
   const w = Math.floor(sheet.getSize().width / 8);
 
   const start = [0, 0];
@@ -105,6 +110,7 @@ export const createMetasprite = async (sheet_path: string, m: Metasprite): Promi
 
   for (const s of m.subsprites) {
     const subsprite = createCanvas(s.size[0], s.size[1]);
+
     if (s.xflip) {
       const ctx = subsprite.getContext('2d', { alpha: true });
       if (ctx) {
@@ -144,6 +150,9 @@ export const createMetasprite = async (sheet_path: string, m: Metasprite): Promi
     ctx?.drawImage(subsprite, s.x - start[0], s.y - start[1]);
   }
 
+  // Replace backdrop color to transparent
+  // metasprite = makeBackdropTransparent(metasprite, backdrop);
+
   const url = metasprite.toDataURL();
   return {
     x: start[0],
@@ -152,4 +161,45 @@ export const createMetasprite = async (sheet_path: string, m: Metasprite): Promi
     h: size[1],
     url,
   };
+};
+
+// Replace backdrop color to transparent
+const makeBackdropTransparent = (canvas: Canvas, backdrop: [number, number, number]): Canvas => {
+  const ctx = canvas.getContext('2d', { alpha: true });
+  if (ctx) {
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      if (imageData.data[i] === backdrop[0] && imageData.data[i + 1] === backdrop[1] && imageData.data[i + 2] === backdrop[2]) {
+        imageData.data[i + 3] = 0;
+      }
+    }
+    ctx.putImageData(imageData, 0, 0);
+  }
+  return canvas;
+};
+
+const makeBackdropTransparentForNativeImage = async (img: Electron.NativeImage, backdrop: [number, number, number]): Promise<Electron.NativeImage> => {
+  const canvas = await getCanvasFromImage(img);
+  const ctx = canvas.getContext('2d', { alpha: true });
+  if (ctx) {
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      if (imageData.data[i] === backdrop[0] && imageData.data[i + 1] === backdrop[1] && imageData.data[i + 2] === backdrop[2]) {
+        imageData.data[i + 3] = 0;
+      }
+    }
+    ctx.putImageData(imageData, 0, 0);
+  }
+  const result = nativeImage.createFromDataURL(canvas.toDataURL());
+  return result;
+};
+
+const getCanvasFromImage = async (img: Electron.NativeImage): Promise<Canvas> => {
+  const raw = await loadImage(img.toDataURL());
+  const canvas = createCanvas(img.getSize().width, img.getSize().height);
+  const ctx = canvas.getContext('2d', { alpha: true });
+  if (ctx) {
+    ctx.drawImage(raw, 0, 0);
+  }
+  return canvas;
 };
