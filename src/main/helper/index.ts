@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import archiver from 'archiver';
 
 export * from './bpp';
 
@@ -131,4 +132,20 @@ export const getBackdropColor = (png: Uint8Array): [number, number, number] => {
     ofs += 4; // crc
   }
   return [0, 0, 0];
+};
+
+export const zipDataURLs = (outputPath: string, urls: string[]) => {
+  let archive = archiver.create('zip', {});
+  const output = fs.createWriteStream(outputPath);
+  archive.pipe(output);
+  urls.forEach((dataURL, i) => {
+    const raw = Buffer.from(dataURL.split(',')[1], 'base64');
+    archive.append(raw, { name: `${i}.png` });
+  });
+  archive.finalize();
+  output.on('close', function () {
+    // zip圧縮完了すると発火する
+    var archive_size = archive.pointer();
+    console.log(`complete! total size : ${archive_size} bytes`);
+  });
 };

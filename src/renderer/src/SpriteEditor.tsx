@@ -1,4 +1,4 @@
-import { Box, Select, Spacer, Wrap, WrapItem, Text, Image } from '@chakra-ui/react';
+import { Box, Select, Spacer, Wrap, WrapItem, Text, Image, Button } from '@chakra-ui/react';
 import { useAnimationFrame } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
@@ -139,6 +139,18 @@ export const SpriteEditor = () => {
             );
           })}
         </Wrap>
+        <Spacer h={2} />
+        <Button
+          colorScheme="teal"
+          onClick={async () => {
+            await window.electron.ipcRenderer.invoke(
+              'download',
+              frames.map((frame) => frame.url),
+            );
+          }}
+        >
+          Export
+        </Button>
       </Box>
     </Box>
   );

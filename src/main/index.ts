@@ -5,7 +5,7 @@ import icon from '../../resources/icon.png?asset';
 import { PATH, loadProject } from './project';
 import { createScreen, getMetatileInfo, getStageList, loadStage } from './level';
 import { loadSprite } from './sprite';
-import { loadJSON } from './helper';
+import { loadJSON, zipDataURLs } from './helper';
 
 function createWindow(): void {
   // Create the browser window.
@@ -109,4 +109,9 @@ ipcMain.handle('get-sprite-list', async (_, dynamicOrStatic: 'dynamic' | 'static
 
 ipcMain.handle('get-metatile-info', (_, metatileID: number) => {
   return { ok: true, data: getMetatileInfo(metatileID) };
+});
+
+ipcMain.handle('download', (_, urls: string[]) => {
+  zipDataURLs('./output.zip', urls);
+  return { ok: true };
 });
