@@ -1,4 +1,5 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import archiver from 'archiver';
 
@@ -148,4 +149,11 @@ export const zipDataURLs = (outputPath: string, urls: string[]) => {
     var archive_size = archive.pointer();
     console.log(`complete! total size : ${archive_size} bytes`);
   });
+};
+
+export const downloadPngDataURL = (dataURL: string, filename: string = './output.png') => {
+  console.log(os.homedir());
+  const p = path.join(os.homedir(), 'Downloads', filename);
+  const buf = Buffer.from(dataURL.split(',')[1], 'base64');
+  fs.writeFileSync(p, buf);
 };

@@ -1,11 +1,12 @@
-import { Box, Divider, Flex, Select, Spacer } from '@chakra-ui/react';
-import { focusMetatileIDAtom, layerState, metatileSheet } from './state';
+import { Box, Button, Divider, Flex, Select, Spacer, Text } from '@chakra-ui/react';
+import { currentScreenState, focusMetatileIDAtom, layerState, metatileSheet } from './state';
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import { MetatileSheet } from './components/MetatileSheet';
 import { Screen } from './components/Screen';
 import { LayerViewer } from './components/Layer';
 import { MetatileDetail } from './components/MetatileDetail';
 import { useEffect, useState } from 'react';
+import { useImageURL } from './hooks/useImageURL';
 
 export const LevelEditor = () => {
   const metatileID = useRecoilValue(focusMetatileIDAtom);
@@ -13,6 +14,7 @@ export const LevelEditor = () => {
   const setLayer = useSetRecoilState(layerState);
   const [list, setList] = useState<string[]>([]);
   const [stage, setStage] = useState<string>('spacecraft');
+  const screen = useRecoilValue(currentScreenState);
 
   const loadStage = async (stage: string) => {
     const { ok, data } = await window.electron.ipcRenderer.invoke('load-stage', stage);
@@ -27,6 +29,10 @@ export const LevelEditor = () => {
     setList(data);
   };
 
+  const exportRoom = async () => {
+    await window.electron.ipcRenderer.invoke('download-dataurl-png', screen, 'screen.png');
+  };
+
   useEffect(() => {
     loadStage(stage);
     getStageList();
@@ -37,41 +43,58 @@ export const LevelEditor = () => {
   }, [stage]);
 
   return (
-    <>
-      <Box mx={4}>
-        <Select
-          placeholder="Select stage"
-          onChange={(e) => {
-            setStage(e.target.value);
-          }}
-        >
-          {list.map((stage) => {
-            return (
-              <option key={stage} value={stage}>
-                {stage}
-              </option>
-            );
-          })}
-        </Select>
+    <Flex flexDir="column" rowGap="4">
+      <Box>
+        <Box mx={4}>
+          <Select
+            placeholder="Select stage"
+            onChange={(e) => {
+              setStage(e.target.value);
+            }}
+          >
+            {list.map((stage) => {
+              return (
+                <option key={stage} value={stage}>
+                  {stage}
+                </option>
+              );
+            })}
+          </Select>
+        </Box>
+
+        <Spacer h={4} />
+
+        <Flex columnGap="4" mx={4}>
+          <Box>
+            <LayerViewer />
+            <Spacer h={4} />
+            <Screen />
+          </Box>
+
+          <Divider orientation="vertical" h="auto" />
+
+          <Box>
+            <MetatileDetail sheetURL={sheetURL} metatileID={metatileID} />
+            <Spacer h={4} />
+            <MetatileSheet sheetURL={sheetURL} />
+          </Box>
+        </Flex>
       </Box>
 
-      <Spacer h={4} />
+      <Divider w="auto" />
 
-      <Flex columnGap="4" mx={4}>
-        <Box>
-          <LayerViewer />
-          <Spacer h={4} />
-          <Screen />
-        </Box>
-
-        <Divider orientation="vertical" h="auto" />
-
-        <Box>
-          <MetatileDetail sheetURL={sheetURL} metatileID={metatileID} />
-          <Spacer h={4} />
-          <MetatileSheet sheetURL={sheetURL} />
-        </Box>
-      </Flex>
-    </>
+      <Box m={4}>
+        <Text>Misc:</Text>
+        <Spacer h={4} />
+        <Button
+          colorScheme="teal"
+          onClick={() => {
+            exportRoom();
+          }}
+        >
+          Export Screen
+        </Button>
+      </Box>
+    </Flex>
   );
 };
